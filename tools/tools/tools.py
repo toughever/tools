@@ -4,6 +4,7 @@
 # 处理结果与 office word "另存为"一致
 
 # prerequirement: pip install pywin32
+#                 pip install python-docx
 
 import os
 from win32com.client import Dispatch
@@ -37,11 +38,19 @@ distance = Inches(0.3)
 ##设置默认字体
 #chg_font(doc.styles['Normal'],fontname='Calibri')
 
-def ConvertImageToPDF(image_path, image_file, dest_path): 
-    doc = Document() #以默认模板建立文档对象
-    doc.add_picture(image_path, width=Inches(6), height=Inches(8))
-    if os.path.exists(docx_path):
-        os.remove(docx_path)
+def ConvertImageToPDF(image_path, docx_path, dest_path, wordapp):
+    if os.path.exists(dest_path):
+        return
+    try:
+        doc = Document() #以默认模板建立文档对象
+        doc.add_picture(image_path, width=Inches(6), height=Inches(8))
+    except Exception as e:
+        if os.path.exists(docx_path):
+            os.remove(docx_path)
+        if os.path.exists(dest_path):
+            os.remove(dest_path)
+        print('Error:' + image_path, e)
+        return
     doc.save(docx_path)
 
     #wdFormatDocument = 0 
@@ -71,30 +80,31 @@ def ConvertImageToPDF(image_path, image_file, dest_path):
     #wdFormatXMLTemplateMacroEnabled = 15 
     #wdFormatXPS = 18
 
-    try:
-        wordapp = Dispatch('word.Application')
-        #wordapp.Visible = True
-        #doc = wordapp.Documents.Add()
-        doc = wordapp.Documents.Open(docx_path)
-        # 插入文字
-        range = doc.Range(0,0)
-        #range.InsertBefore('6b.jpg')
-        #doc.SaveAs('6b.docx')
-        #doc.SaveAs('6b.pdf', win32com.client.constants.wdFormatPDF)
-        doc.SaveAs(dest_path, wdFormatPDF)
-        print(dest_path)
-        doc.Close()
+    #wordapp.Visible = True
+    #doc = wordapp.Documents.Add()
+    doc = wordapp.Documents.Open(docx_path)
+    # 插入文字
+    range = doc.Range(0,0)
+    #range.InsertBefore('6b.jpg')
+    #doc.SaveAs('6b.docx')
+    #doc.SaveAs('6b.pdf', win32com.client.constants.wdFormatPDF)
+    doc.SaveAs(dest_path, wdFormatPDF)
+    print(dest_path)
+    doc.Close()
 
-    finally:
+workDir = r"E:\notebook\Data"
+rootPath = workDir + r"\Images"
+docxRootPath = workDir + r"\Docx"
+destRootPath = workDir + r"\Pdf"
+
+try:
+    wordapp = Dispatch('word.Application')
+    for scenario in os.listdir(rootPath):
+        for image_file in os.listdir(os.path.join(rootPath, scenario)):
+            image_path = (os.path.join(rootPath, scenario, image_file))
+            docx_path = (os.path.join(docxRootPath, scenario, image_file + '.docx'))
+            dest_path = (os.path.join(destRootPath, scenario, image_file + '.pdf'))
+            ConvertImageToPDF(image_path, docx_path, dest_path, wordapp)
+finally:
         wordapp.Quit()
-
-rootPath = r"C:\Users\keqiaow.FAREAST\work\toughever\Data\Images"
-docxRootPath = r"C:\Users\keqiaow.FAREAST\work\toughever\Data\Docx"
-destRootPath = r"C:\Users\keqiaow.FAREAST\work\toughever\Data\Pdf"
-for scenario in os.listdir(rootPath):
-    for image_file in os.listdir(os.path.join(rootPath, scenario)):
-        image_path = (os.path.join(rootPath, scenario, image_file))
-        docx_path = (os.path.join(docxRootPath, scenario, image_file + '.docx'))
-        dest_path = (os.path.join(destRootPath, scenario, image_file + '.pdf'))
-        ConvertImageToPDF(image_path, docx_path, dest_path)
 
